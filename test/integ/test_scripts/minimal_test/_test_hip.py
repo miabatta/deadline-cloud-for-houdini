@@ -6,6 +6,8 @@ from pathlib import Path
 
 from deadline_cloud_for_houdini.submitter import _create_job_bundle  # type: ignore
 from deadline_cloud_for_houdini._assets import _get_evaluated_asset_references, _parse_files  # type: ignore
+from ...helpers import hip_utils
+
 import hou
 
 
@@ -74,10 +76,7 @@ def create_submitter_bundle(job_history_dir: str, output_dir: str) -> None:
     """
     Add a submitter node to the pre-defined scene and set parameters.
     """
-    submitter_node = hou.node("/out").createNode("deadline_cloud")
-    render_node = _create_scene_and_rop(output_dir)
-    submitter_node.setFirstInput(render_node)
-    _set_parameters(submitter_node)
+    submitter_node = build_scene(output_dir)
 
     _parse_files(submitter_node)
     _create_job_bundle(
@@ -85,14 +84,21 @@ def create_submitter_bundle(job_history_dir: str, output_dir: str) -> None:
     )
 
 
+def build_scene(output_dir: str) -> hou.RopNode:
+    geo_node = hip_utils.create_box_geometry("test_geo")
+    cam_node = hip_utils.create_camera("test_cam", translate=(5, 5, 5), lookat_node=geo_node)
+    hip_utils.create_light("test_light", translate=(1, 1, 2))
+    render_node = hip_utils.create_mantra("render_mantra", cam_node=cam_node, output_dir=output_dir)
+    submitter_node = hip_utils.create_submitter("submitter_node", input_node=render_node)
+
+    return submitter_node
+
+
 def save_as_hip(output_dir: str) -> None:
     """
     Save the pre-defined scene as a HIP file so it can be used in adaptor tests.
     """
-    submitter_node = hou.node("/out").createNode("deadline_cloud")
-    render_node = _create_scene_and_rop(output_dir)
-    submitter_node.setFirstInput(render_node)
-    _set_parameters(submitter_node)
+    build_scene(output_dir)
 
     hou.hipFile.save(str(Path(output_dir).joinpath(hou.hipFile.basename())))
 
