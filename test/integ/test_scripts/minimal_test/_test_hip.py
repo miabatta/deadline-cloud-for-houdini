@@ -72,6 +72,18 @@ def _set_parameters(submitter_node: hou.Node):
     hou.playbar.setFrameRange(1, 2)
 
 
+def build_scene(output_dir: str) -> hou.RopNode:
+    geo_node = hip_utils.create_box_geometry("test_geo")
+    cam_node = hip_utils.create_camera("test_cam", translate=(5, 5, 5), lookat_node=geo_node)
+    hip_utils.create_light("test_light", translate=(1, 1, 2))
+    render_node = hip_utils.create_mantra("render_mantra", cam_node=cam_node, output_dir=output_dir)
+    submitter_node = hip_utils.create_submitter("submitter_node", input_node=render_node)
+
+    hip_utils.create_keyframes(node=cam_node, parm_name="tx", values=[5, 5.5])
+
+    return submitter_node
+
+
 def create_submitter_bundle(job_history_dir: str, output_dir: str) -> None:
     """
     Add a submitter node to the pre-defined scene and set parameters.
@@ -82,16 +94,6 @@ def create_submitter_bundle(job_history_dir: str, output_dir: str) -> None:
     _create_job_bundle(
         submitter_node, job_history_dir, _get_evaluated_asset_references(submitter_node)
     )
-
-
-def build_scene(output_dir: str) -> hou.RopNode:
-    geo_node = hip_utils.create_box_geometry("test_geo")
-    cam_node = hip_utils.create_camera("test_cam", translate=(5, 5, 5), lookat_node=geo_node)
-    hip_utils.create_light("test_light", translate=(1, 1, 2))
-    render_node = hip_utils.create_mantra("render_mantra", cam_node=cam_node, output_dir=output_dir)
-    submitter_node = hip_utils.create_submitter("submitter_node", input_node=render_node)
-
-    return submitter_node
 
 
 def save_as_hip(output_dir: str) -> None:
