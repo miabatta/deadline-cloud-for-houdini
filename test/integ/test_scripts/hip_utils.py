@@ -66,11 +66,11 @@ def create_light(
     return light_node
 
 
-def create_mantra(name: str, cam_node: hou.ObjNode, output_dir: str) -> hou.RopNode:
+def create_mantra(name: str, cam_node: hou.ObjNode, output_file: str) -> hou.RopNode:
     render_node = hou.node("/out").createNode("ifd", name)
 
     render_node.parm("camera").set(cam_node.path())
-    render_node.parm("vm_picture").set(output_dir)
+    render_node.parm("vm_picture").set(output_file)
 
     return render_node
 

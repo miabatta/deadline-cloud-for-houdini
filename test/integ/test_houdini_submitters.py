@@ -127,7 +127,7 @@ class TestSubmitters:
                 "inputs": {"directories": [], "filenames": {scene_location_posix}},
                 "outputs": {
                     "directories": [
-                        str(output_path) + "/render"
+                        str(output_path)
                     ],  # The test scene uses a forward slash for the render directory
                 },
                 "referencedPaths": [],

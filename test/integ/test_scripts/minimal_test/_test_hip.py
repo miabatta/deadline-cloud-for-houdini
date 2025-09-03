@@ -76,7 +76,7 @@ def build_scene(output_dir: str) -> hou.RopNode:
     geo_node = hip_utils.create_box_geometry("test_geo")
     cam_node = hip_utils.create_camera("test_cam", translate=(5, 5, 5), lookat_node=geo_node)
     hip_utils.create_light("test_light", translate=(1, 1, 2))
-    render_node = hip_utils.create_mantra("mantra1", cam_node=cam_node, output_dir=output_dir)
+    render_node = hip_utils.create_mantra("mantra1", cam_node=cam_node, output_file=f"{output_dir}/$HIPNAME.$OS.$F4.png")
     submitter_node = hip_utils.create_submitter("submitter_node", input_node=render_node)
 
     hip_utils.create_keyframes(node=cam_node, parm_name="tx", values=[5, 5.5])
