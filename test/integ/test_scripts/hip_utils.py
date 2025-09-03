@@ -95,7 +95,9 @@ def create_keyframes(node: hou.Node, parm_name: str, values: list) -> None:
     kf_list = []
 
     for i in range(len(values)):
-        kf_list.append(hou.Keyframe().setFrame(i).setValue(values[i]))
+        curr_frame = hou.Keyframe(values[i])
+        curr_frame.setFrame(i)
+        kf_list.append(curr_frame)
 
     kf_parm.setKeyframes(kf_list)
 
