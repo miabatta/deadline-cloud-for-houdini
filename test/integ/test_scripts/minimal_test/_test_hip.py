@@ -76,7 +76,7 @@ def build_scene(output_dir: str) -> hou.RopNode:
     geo_node = hip_utils.create_box_geometry("test_geo")
     cam_node = hip_utils.create_camera("test_cam", translate=(5, 5, 5), lookat_node=geo_node)
     hip_utils.create_light("test_light", translate=(1, 1, 2))
-    render_node = hip_utils.create_mantra("render_mantra", cam_node=cam_node, output_dir=output_dir)
+    render_node = hip_utils.create_mantra("mantra1", cam_node=cam_node, output_dir=output_dir)
     submitter_node = hip_utils.create_submitter("submitter_node", input_node=render_node)
 
     hip_utils.create_keyframes(node=cam_node, parm_name="tx", values=[5, 5.5])
@@ -88,6 +88,7 @@ def create_submitter_bundle(job_history_dir: str, output_dir: str) -> None:
     """
     Add a submitter node to the pre-defined scene and set parameters.
     """
+    hou.hipFile.setName("test.hip")
     submitter_node = build_scene(output_dir)
 
     _parse_files(submitter_node)
@@ -100,6 +101,7 @@ def save_as_hip(output_dir: str) -> None:
     """
     Save the pre-defined scene as a HIP file so it can be used in adaptor tests.
     """
+    hou.hipFile.setName("test.hip")
     build_scene(output_dir)
 
     hou.hipFile.save(str(Path(output_dir).joinpath(hou.hipFile.basename())))
