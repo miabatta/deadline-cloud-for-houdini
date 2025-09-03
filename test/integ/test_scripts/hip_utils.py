@@ -101,4 +101,4 @@ def create_keyframes(node: hou.Node, parm_name: str, values: list) -> None:
 
     kf_parm.setKeyframes(kf_list)
 
-    hou.playbar.setRange(len(values))
+    hou.playbar.setFrameRange(1, len(values))
