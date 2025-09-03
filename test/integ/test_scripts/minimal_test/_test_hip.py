@@ -6,7 +6,7 @@ from pathlib import Path
 
 from deadline_cloud_for_houdini.submitter import _create_job_bundle  # type: ignore
 from deadline_cloud_for_houdini._assets import _get_evaluated_asset_references, _parse_files  # type: ignore
-from .. import hip_utils
+from test.integ.test_scripts import hip_utils
 
 import hou
 
