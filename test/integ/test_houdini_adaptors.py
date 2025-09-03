@@ -40,7 +40,7 @@ class TestAdaptors:
         run_houdini_adaptor_test(job_template_location, job_params)
 
         assert_all_images_close(
-            script_location / "minimal_test" / "expected_images", tmp_path / "render"
+            script_location / "minimal_test" / "expected_images", tmp_path
         )
 
     def test_wedge_node_adaptor(
