@@ -1,6 +1,7 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -10,6 +11,7 @@ from deadline_cloud_for_houdini._assets import (  # type: ignore
     _parse_files,
 )
 from deadline_cloud_for_houdini.submitter import _create_job_bundle  # type: ignore
+from test.integ.helpers import hip_utils
 
 
 def _create_material_node() -> hou.VopNode:
@@ -18,9 +20,9 @@ def _create_material_node() -> hou.VopNode:
     """
     mat_node = hou.node("/mat").createNode("tooncolorshader", "tooncolorshader1")
 
-    mat_node.parm("colorhighr").set(0.771)
-    mat_node.parm("colorhighg").set(0.279)
-    mat_node.parm("colorhighb").set(0.411)
+    mat_node.parm("colorhighr").set()
+    mat_node.parm("colorhighg").set()
+    mat_node.parm("colorhighb").set()
 
     mat_node.parm("colormidr").set(0)
     mat_node.parm("colormidg").set(0.5)
@@ -37,8 +39,6 @@ def _create_scene_and_rop(output_dir: str) -> hou.RopNode:
     """
     Uses the Houdini API to create nodes comprising a simple scene.
     """
-
-    hou.hipFile.setName("test_wedge.hip")
 
     geo_node = hou.node("/obj").createNode("geo", "test_geometry")
     geo_node.createNode("box", "test_box")
@@ -118,14 +118,34 @@ def _set_parameters(submitter_node: hou.Node):
     hou.playbar.setFrameRange(1, 2)
 
 
-def _build_scene(output_dir: str) -> None:
-    _create_material_node()
-    _create_scene_and_rop(output_dir)
-    wedge_node = _create_wedge_node()
-    submitter_node = hou.node("/out").createNode("deadline_cloud")
+def build_scene(output_dir: str) -> hou.RopNode:
+    shader_node = hip_utils.create_toon_shader(
+        "shader_node", (0.771, 0.279, 0.411), (0, 0.5, 1), (0.314667, -0.129333, 0.564667)
+    )
 
-    submitter_node.setFirstInput(wedge_node)
-    _set_parameters(submitter_node)
+    geo_node = hip_utils.create_box_geometry("test_geo")
+    geo_node.parm("shop_materialpath").set(shader_node.path())
+    cam_node = hip_utils.create_camera("test_cam", translate=(5, 5, 5), lookat_node=geo_node)
+    render_node = hip_utils.create_mantra(
+        "mantra1",
+        cam_node=cam_node,
+        output_file=f"{os.path.join(output_dir, 'test_wedge.hip')}",
+        soho_mkpath=1,
+    )
+
+    hip_utils.create_wedge_node(
+        "test_wedge",
+        output_driver=render_node,
+        num_wedgeparams=1,
+        random=0,
+        name1="toonshader",
+        chan1=shader_node.path(),
+    )
+
+    submitter_node = hip_utils.create_submitter("submitter_node", render_node, description="Wedge")
+    hou.hipFile.setName("test_wedge.hip")
+
+    return submitter_node
 
 
 if __name__ == "__main__":
@@ -139,7 +159,7 @@ if __name__ == "__main__":
     # Depending on which test, we have different uses for the scene file:
     # Either use the submitter node to generate a job bundle,
     # or save the scene for use in an `openjd run` call.
-    _build_scene(args.output_dir)
+    build_scene(args.output_dir)
 
     if args.test_type == "submitter":
         submitter_node = hou.node("/out/deadline_cloud1")

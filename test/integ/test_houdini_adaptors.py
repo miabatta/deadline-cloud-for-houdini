@@ -39,9 +39,7 @@ class TestAdaptors:
         )
         run_houdini_adaptor_test(job_template_location, job_params)
 
-        assert_all_images_close(
-            script_location / "minimal_test" / "expected_images", tmp_path
-        )
+        assert_all_images_close(script_location / "minimal_test" / "expected_images", tmp_path)
 
     def test_wedge_node_adaptor(
         self, hython_location: Path, script_location: Path, tmp_path: Path
@@ -63,9 +61,7 @@ class TestAdaptors:
             script_location / "wedge_node_test" / "expected_job_bundle" / "template.yaml"
         )
         run_houdini_adaptor_test(job_template_location, job_params)
-        assert_all_images_close(
-            script_location / "wedge_node_test" / "expected_images", tmp_path / "render"
-        )
+        assert_all_images_close(script_location / "wedge_node_test" / "expected_images", tmp_path)
 
     def test_render_dependencies_adaptor(
         self, hython_location: Path, script_location: Path, tmp_path: Path

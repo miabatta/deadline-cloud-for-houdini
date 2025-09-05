@@ -1,8 +1,8 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
 import argparse
+import os
 import sys
-from pathlib import Path
 
 import hou
 from deadline_cloud_for_houdini._assets import (  # type: ignore
@@ -10,6 +10,7 @@ from deadline_cloud_for_houdini._assets import (  # type: ignore
     _parse_files,
 )
 from deadline_cloud_for_houdini.submitter import _create_job_bundle  # type: ignore
+from test.integ.helpers import hip_utils
 
 
 def _create_scene_and_rop(output_dir: str) -> hou.RopNode:
@@ -66,11 +67,9 @@ def _create_scene_and_rop(output_dir: str) -> hou.RopNode:
     # Set the render node to use the camera we just created
     render_node1.parm("camera").set(cam_node1.path())
     render_node1.parm("vm_picture").set(f"{output_dir}/$HIPNAME.$OS.$F4.png")
-    render_node1.parm("soho_mkpath").set(1)  # Set intermediate directories
 
     render_node2.parm("camera").set(cam_node2.path())
     render_node2.parm("vm_picture").set(f"{output_dir}/$HIPNAME.$OS.$F4.png")
-    render_node2.parm("soho_mkpath").set(1)  # Set intermediate directories
 
     # Create a dependency by chaining the render nodes
     render_node2.setFirstInput(render_node1)
@@ -78,32 +77,31 @@ def _create_scene_and_rop(output_dir: str) -> hou.RopNode:
     return render_node2
 
 
-def _set_parameters(submitter_node: hou.Node):
-    """
-    Set scene parameters in the submitter to create the template we expect.
-    """
-    submitter_node.parm("name").set("$HIPNAME")
-    submitter_node.parm("description").set("Render dependencies")
-    submitter_node.parm("separate_steps").set(1)
-    submitter_node.parm("include_adaptor_wheels").set(0)
-    submitter_node.parm("auto_unlock_rops").set(0)
-    submitter_node.parm("auto_parse_hip").set(0)
-    submitter_node.parm("auto_save_hip").set(0)
-
-    # Set the frame range
-    submitter_node.parm("trange").set(
-        2
-    )  # This is an enum dropdown. 2 corresponds to the "Render Frame Range" option.
-    hou.playbar.setFrameRange(1, 2)
-
-
-def _build_scene(output_dir: str, scene_name: str) -> None:
+def build_scene(output_dir: str, scene_name: str) -> hou.RopNode:
     hou.hipFile.setName(scene_name)
-    final_render_node = _create_scene_and_rop(output_dir)
-    submitter_node = hou.node("/out").createNode("deadline_cloud")
+    geo_node = hip_utils.create_box_geometry("test_geo")
+    cam_node_1 = hip_utils.create_camera("test_cam_1", translate=(5, 5, 5), lookat_node=geo_node)
+    cam_node_2 = hip_utils.create_camera("test_cam_2", translate=(5, 2, 0), lookat_node=geo_node)
 
-    submitter_node.setFirstInput(final_render_node)
-    _set_parameters(submitter_node)
+    hip_utils.create_light("test_light", translate=(1, 1, 2))
+
+    hip_utils.create_keyframes(cam_node_1, parm_name="tx", values=[5, 5.5])
+    hip_utils.create_keyframes(cam_node_2, parm_name="tx", values=[5, 5.5])
+
+    render_node_1 = hip_utils.create_mantra(
+        "mantra1", cam_node_1, f"{output_dir}/$HIPNAME.$OS.$F4.png"
+    )
+    render_node_1.parm("soho_mkpath").set(1)  # Set intermediate directories
+    render_node_2 = hip_utils.create_mantra(
+        "mantra2", cam_node_2, f"{output_dir}/$HIPNAME.$OS.$F4.png"
+    )
+    render_node_2.parm("soho_mkpath").set(1)  # Set intermediate directories
+    render_node_2.setFirstInput(render_node_1)
+
+    submitter_node = hip_utils.create_submitter(
+        "submitter_node", render_node_2, description="Render dependencies"
+    )
+    return submitter_node
 
 
 if __name__ == "__main__":
@@ -118,10 +116,9 @@ if __name__ == "__main__":
     # Depending on which test, we have different uses for the scene file:
     # Either use the submitter node to generate a job bundle,
     # or save the scene for use in an `openjd run` call.
-    _build_scene(args.output_dir, args.scene_name)
+    submitter_node = build_scene(args.output_dir, args.scene_name)
 
     if args.test_type == "submitter":
-        submitter_node = hou.node("/out/deadline_cloud1")
         _parse_files(submitter_node)
         _create_job_bundle(
             submitter_node,
@@ -129,4 +126,4 @@ if __name__ == "__main__":
             _get_evaluated_asset_references(submitter_node),
         )
     elif args.test_type == "adaptor":
-        hou.hipFile.save(str(Path(args.output_dir).joinpath(hou.hipFile.basename())))
+        hou.hipFile.save(os.path.join(args.output_dir, args.scene_name))
